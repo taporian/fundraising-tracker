@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.scss";
 import AnimatedNumber from "./components/AnimatedNumber";
+import ConfettiButton from "./components/ConfettiButton";
 
 function App() {
   const [amount, setAmount] = useState(0);
@@ -30,15 +31,12 @@ function App() {
         ]),
       });
       const data = await response.json();
-
       const rawCollected = Number(data[0].data.campaign.collected.amount);
       const collectedAmount = Math.floor(rawCollected / 100);
-
       const targetAmount = Math.floor(
         Number(data[0].data.campaign.target.amount) / 100
       );
       const curr = data[0].data.campaign.target.currencyNode.symbol;
-
       setAmount(collectedAmount);
       setTarget(targetAmount);
       setCurrency(curr);
@@ -58,7 +56,37 @@ function App() {
   return (
     <div className="app">
       <div className="card">
-        <h1>Do Not Worry Podcast Fundraiser</h1>
+        <h1 className="dnpf-heading">
+          {(() => {
+            const colors = [
+              "#ff8000",
+              "#ffe163",
+              "#fea5d9",
+              "#0dc2f5",
+              "#02f2a8",
+              "#06efa7",
+              "#fee062",
+              "#faa906",
+              "#fe8002",
+            ];
+            const text = "Do Not Worry Podcast Fundraiser";
+            let colorIndex = 0;
+            return Array.from(text).map((char, i) => {
+              if (char === " ") return <span key={i}> </span>;
+              const span = (
+                <span
+                  key={i}
+                  style={{ color: colors[colorIndex % colors.length] }}
+                >
+                  {char}
+                </span>
+              );
+              colorIndex++;
+              return span;
+            });
+          })()}
+        </h1>
+        <ConfettiButton />
         {loading ? (
           <p>Loading...</p>
         ) : (
@@ -70,7 +98,6 @@ function App() {
                 <AnimatedNumber value={amount} />
               </span>
             </p>
-
             <p className="amounts center">
               Target:
               <span className="target large">
