@@ -1,0 +1,61 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: #1e1e1e; /* full-page background */
+  font-family: Arial, sans-serif;
+}
+
+.app-wrapper {
+  min-height: 100vh; /* full viewport height */
+  display: grid; /* grid centering avoids flex issues */
+  place-items: center; /* centers card both vertically & horizontally */
+  background: inherit; /* same as body */
+}
+
+.card {
+  background: #2c2c2c;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  width: 350px;
+  max-width: 90%; /* responsive on smaller screens */
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1.2rem;
+    margin: 0.5rem 0;
+
+    .collected {
+      color: #4caf50;
+      font-weight: bold;
+    }
+
+    .target {
+      color: #ffc107;
+      font-weight: bold;
+    }
+  }
+
+  .progress {
+    margin-top: 1.5rem;
+    height: 20px;
+    width: 100%;
+    background: #444;
+    border-radius: 10px;
+    overflow: hidden;
+
+    .progress-bar {
+      height: 100%;
+      background: #4caf50;
+      transition: width 0.5s ease;
+    }
+  }
+}
