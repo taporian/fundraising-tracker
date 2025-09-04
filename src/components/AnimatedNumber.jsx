@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./AnimatedNumber.scss";
 
 export default function AnimatedNumber({ value, duration = 800 }) {
-  const formattedValue = value.toLocaleString();
+  // Force English (US) locale for consistent comma separators internationally
+  const formattedValue = value.toLocaleString("en-US");
   const digits = formattedValue.split("");
 
   return (
@@ -10,7 +11,7 @@ export default function AnimatedNumber({ value, duration = 800 }) {
       {digits.map((char, index) => (
         <span key={index} className="digit-container">
           {char === "," ? (
-            <span className="comma">,</span>
+            <span className="separator">{char}</span>
           ) : (
             <RollingDigit digit={parseInt(char)} duration={duration} />
           )}
