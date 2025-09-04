@@ -17,8 +17,10 @@ body {
 }
 
 .card {
+  --section-spacing: 0.8rem;
+
   background: #111;
-  padding: 1.5rem;
+  padding: var(--section-spacing) 1.5rem var(--section-spacing);
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
@@ -34,6 +36,13 @@ body {
     font-size: 1.4rem;
     margin-bottom: 1rem;
     color: #fff;
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+
+  .dnpf-heading {
+    font-size: 1.4rem;
+    margin-bottom: var(--section-spacing);
     line-height: 1.3;
     word-wrap: break-word;
   }
@@ -70,6 +79,7 @@ body {
     background: #fff;
     border-radius: 10px;
     overflow: hidden;
+    margin-bottom: var(--section-spacing);
 
     .progress-bar {
       height: 100%;
@@ -77,6 +87,36 @@ body {
       transition: width 0.5s ease;
     }
   }
+  .main-amount {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    font-size: 3rem;
+    font-weight: 900;
+    color: #4caf50;
+    margin: var(--section-spacing) 0;
+    text-align: center;
+
+    .currency-large {
+      font-size: 2.5rem;
+      margin-right: 0.2rem;
+      line-height: 1;
+    }
+  }
+
+  .raised-of-target {
+    font-size: 0.9rem;
+    color: #ccc;
+    text-align: center;
+    margin-bottom: var(--section-spacing);
+
+    .target-amount {
+      color: #ffc107;
+      font-weight: bold;
+      margin-left: 0.3rem;
+    }
+  }
+
   .amounts.center {
     display: flex;
     flex-direction: row;

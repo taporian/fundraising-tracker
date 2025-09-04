@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./App.scss";
 import AnimatedNumber from "./components/AnimatedNumber";
 import ConfettiAnimation from "./components/ConfettiAnimation";
+import SparklyText from "./components/SparklyText";
 
 function App() {
   const [celebrationTrigger, setCelebrationTrigger] = useState(false);
@@ -65,8 +66,9 @@ function App() {
     <div className="app">
       <div className="card">
         <h1 className="dnpf-heading">
-          {(() => {
-            const colors = [
+          <SparklyText
+            lines={["Do Not Worry", "Podcast Fundraiser"]}
+            colors={[
               "#ff8000",
               "#ffe163",
               "#fea5d9",
@@ -76,40 +78,22 @@ function App() {
               "#fee062",
               "#faa906",
               "#fe8002",
-            ];
-            const text = "Do Not Worry Podcast Fundraiser";
-            let colorIndex = 0;
-            return Array.from(text).map((char, i) => {
-              if (char === " ") return <span key={i}> </span>;
-              const span = (
-                <span
-                  key={i}
-                  style={{ color: colors[colorIndex % colors.length] }}
-                >
-                  {char}
-                </span>
-              );
-              colorIndex++;
-              return span;
-            });
-          })()}
+            ]}
+          />
         </h1>
         <ConfettiAnimation trigger={celebrationTrigger} />
         {loading ? (
           <p>Loading...</p>
         ) : (
           <>
-            <p className="amounts center">
-              Collected:
-              <span className="collected large">
-                <span className="currency">{currency}</span>
-                <AnimatedNumber value={amount} />
-              </span>
-            </p>
-            <p className="amounts center">
-              Target:
-              <span className="target large">
-                <span className="currency">{currency}</span>
+            <div className="main-amount">
+              <span className="currency-large">{currency}</span>
+              <AnimatedNumber value={amount} />
+            </div>
+            <p className="raised-of-target">
+              Raised of{" "}
+              <span className="target-amount">
+                {currency}
                 <AnimatedNumber value={target} />
               </span>
             </p>
