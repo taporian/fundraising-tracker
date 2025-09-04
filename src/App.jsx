@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.scss";
+import AnimatedNumber from "./components/AnimatedNumber";
 
 function App() {
   const [amount, setAmount] = useState(0);
@@ -29,9 +30,10 @@ function App() {
         ]),
       });
       const data = await response.json();
-      const collectedAmount = Math.floor(
-        Number(data[0].data.campaign.collected.amount) / 100
-      );
+
+      const rawCollected = Number(data[0].data.campaign.collected.amount);
+      const collectedAmount = Math.floor(rawCollected / 100);
+
       const targetAmount = Math.floor(
         Number(data[0].data.campaign.target.amount) / 100
       );
@@ -43,7 +45,7 @@ function App() {
       setPercentage(Math.min((collectedAmount / targetAmount) * 100, 100));
       setLoading(false);
     } catch (err) {
-      console.error(err);
+      console.error("API Error:", err);
     }
   };
 
@@ -61,18 +63,19 @@ function App() {
           <p>Loading...</p>
         ) : (
           <>
-            <p>
-              Collected:{" "}
-              <span className="collected">
-                {currency}
-                {amount.toLocaleString()}
+            <p className="amounts center">
+              Collected:
+              <span className="collected large">
+                <span className="currency">{currency}</span>
+                <AnimatedNumber value={amount} />
               </span>
             </p>
-            <p>
-              Target:{" "}
-              <span className="target">
-                {currency}
-                {target.toLocaleString()}
+
+            <p className="amounts center">
+              Target:
+              <span className="target large">
+                <span className="currency">{currency}</span>
+                <AnimatedNumber value={target} />
               </span>
             </p>
             <div className="progress">
