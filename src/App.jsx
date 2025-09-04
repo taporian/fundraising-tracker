@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./App.scss";
 import AnimatedNumber from "./components/AnimatedNumber";
-import ConfettiButton from "./components/ConfettiButton";
+import ConfettiAnimation from "./components/ConfettiAnimation";
 
 function App() {
+  const [celebrationTrigger, setCelebrationTrigger] = useState(false);
   const [amount, setAmount] = useState(0);
   const [target, setTarget] = useState(0);
   const [currency, setCurrency] = useState("£");
@@ -53,6 +54,13 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (amount === target && amount > 0) {
+      setCelebrationTrigger(true);
+      setTimeout(() => setCelebrationTrigger(false), 5000);
+    }
+  }, [amount, target]);
+
   return (
     <div className="app">
       <div className="card">
@@ -86,7 +94,7 @@ function App() {
             });
           })()}
         </h1>
-        <ConfettiButton />
+        <ConfettiAnimation trigger={celebrationTrigger} />
         {loading ? (
           <p>Loading...</p>
         ) : (
