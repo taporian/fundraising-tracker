@@ -18,19 +18,19 @@ body {
 
 .card {
   --section-spacing: 0.8rem;
-
   background: #111;
-  padding: var(--section-spacing) 1.5rem var(--section-spacing);
+
+  padding: var(--section-spacing) 1.5rem 0;
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+
   width: 90%;
   max-width: 400px;
   max-height: 95vh;
   box-sizing: border-box;
   border-left: 8px solid #ce1126;
   border-right: 8px solid #007a3d;
-  overflow-y: auto;
 
   h1 {
     font-size: 1.4rem;
@@ -80,11 +80,38 @@ body {
     border-radius: 10px;
     overflow: hidden;
     margin-bottom: var(--section-spacing);
+    border: 1px solid #007a3d;
 
     .progress-bar {
       height: 100%;
-      background: #ce1126;
+      background: linear-gradient(90deg, #ce1126 0%, #007a3d 100%);
       transition: width 0.5s ease;
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.3) 50%,
+          transparent 100%
+        );
+        animation: progress-shine 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  @keyframes progress-shine {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
     }
   }
   .main-amount {
