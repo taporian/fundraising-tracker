@@ -2,7 +2,10 @@
   position: absolute;
   top: 0.5rem;
   right: 0;
-  background: linear-gradient(135deg, #007a3d 0%, #ce1126 100%);
+  background: var(
+    --theme-toast-gradient,
+    linear-gradient(135deg, #007a3d 0%, #ce1126 100%)
+  );
   color: white;
   padding: 0.8rem;
   border-radius: 8px 0 0 8px;
@@ -39,13 +42,15 @@
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
   }
 
   &__amount {
     font-size: 0.9rem;
     font-weight: bold;
-    color: #ffe163;
+    color: var(--theme-toast-amount-color, #ffe163);
     white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
   }
 }
 

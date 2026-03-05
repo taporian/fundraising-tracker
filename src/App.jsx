@@ -1,9 +1,59 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.scss";
 import AnimatedNumber from "./components/AnimatedNumber";
 import ConfettiAnimation from "./components/ConfettiAnimation";
-import SparklyText from "./components/SparklyText";
 import Toast from "./components/Toast";
+import SparklyText from "./components/SparklyText";
+import CedarSvg from "./assets/Cedar_tiles.svg";
+import { fetchCampaign, fetchLatestSupporter } from "./api/chuffed";
+import { FETCH_INTERVAL_MS, ACTIVE_THEME } from "./constants";
+import { THEMES } from "./themes";
+
+const SPARKLY_COLORS = [
+  "#FF8000",
+  "#FFE163",
+  "#FEA5D9",
+  "#0DC2F5",
+  "#02F2A8",
+  "#06EFA7",
+  "#FEE062",
+  "#FAA906",
+];
+
+// Apply theme CSS custom properties to :root before first render
+const theme = THEMES[ACTIVE_THEME] ?? THEMES[1];
+document.documentElement.style.setProperty(
+  "--theme-flag-bar-left",
+  theme.flagBarLeft,
+);
+document.documentElement.style.setProperty(
+  "--theme-flag-bar-right",
+  theme.flagBarRight,
+);
+document.documentElement.style.setProperty(
+  "--theme-progress-bar-bg",
+  theme.progressBarBg,
+);
+document.documentElement.style.setProperty(
+  "--theme-amount-color",
+  theme.amountColor,
+);
+document.documentElement.style.setProperty(
+  "--theme-title-accent",
+  theme.titleAccentColor,
+);
+document.documentElement.style.setProperty(
+  "--theme-cedar-color",
+  theme.cedarColor,
+);
+document.documentElement.style.setProperty(
+  "--theme-toast-gradient",
+  theme.toastGradient,
+);
+document.documentElement.style.setProperty(
+  "--theme-toast-amount-color",
+  theme.toastAmountColor,
+);
 
 function App() {
   const [celebrationTrigger, setCelebrationTrigger] = useState(false);
@@ -13,76 +63,48 @@ function App() {
   const [percentage, setPercentage] = useState(0);
   const [displayPercentage, setDisplayPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [, setLastSupporterId] = useState(null);
   const [newSupporter, setNewSupporter] = useState(null);
+  // Tracks last seen ID separately from toast state so closing the toast
+  // doesn't cause the same supporter to re-appear on the next poll.
+  const lastSupporterIdRef = useRef(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadCampaign = async () => {
       try {
-        const response = await fetch("https://chuffed.org/api/graphql", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify([
-            {
-              operationName: "getCampaign",
-              variables: { id: 147526 },
-              query: `
-                query getCampaign($id: ID!) {
-                  campaign(id: $id) {
-                    collected { amount }
-                    target { amount currency currencyNode { symbol } }
-                  }
-                }
-              `,
-            },
-          ]),
-        });
-        const data = await response.json();
-        const rawCollected = Number(data[0].data.campaign.collected.amount);
-        const collectedAmount = Math.floor(rawCollected / 100);
-        const targetAmount = Math.floor(
-          Number(data[0].data.campaign.target.amount) / 100
-        );
-        const curr = data[0].data.campaign.target.currencyNode.symbol;
+        const { collectedAmount, targetAmount, currency } =
+          await fetchCampaign();
         setAmount(collectedAmount);
         setTarget(targetAmount);
-        setCurrency(curr);
+        setCurrency(currency);
         setPercentage(Math.min((collectedAmount / targetAmount) * 100, 100));
         setLoading(false);
       } catch (err) {
-        console.error("API Error:", err);
+        console.error("Campaign API Error:", err);
       }
     };
 
-    const fetchSupporters = async () => {
+    const loadSupporters = async () => {
       try {
-        const response = await fetch(
-          "https://chuffed.org/api/v2/campaigns/147526/supporters?limit=20&offset=0"
-        );
-        const data = await response.json();
+        const latest = await fetchLatestSupporter();
+        if (!latest) return;
 
-        if (data.data && data.data.length > 0) {
-          const latestSupporter = data.data[0];
-
-          // Check if this is a new supporter (different ID from last time)
-          setLastSupporterId((prevId) => {
-            if (prevId !== null && latestSupporter.id !== prevId) {
-              setNewSupporter(latestSupporter);
-            }
-            return latestSupporter.id;
-          });
+        if (latest.id !== lastSupporterIdRef.current) {
+          lastSupporterIdRef.current = latest.id;
+          setNewSupporter(latest);
         }
       } catch (err) {
         console.error("Supporters API Error:", err);
       }
     };
 
-    fetchData();
-    fetchSupporters();
+    loadCampaign();
+    loadSupporters();
+
     const interval = setInterval(() => {
-      fetchData();
-      fetchSupporters();
-    }, 5000);
+      loadCampaign();
+      loadSupporters();
+    }, FETCH_INTERVAL_MS);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -93,132 +115,89 @@ function App() {
     }
   }, [amount, target]);
 
-  // Animate progress bar fill
   useEffect(() => {
     if (percentage > 0) {
-      const duration = 2000; // 2 seconds
+      const duration = 2000;
       const startTime = Date.now();
       const startPercentage = displayPercentage;
 
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function for smooth animation
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        const currentPercentage =
-          startPercentage + (percentage - startPercentage) * easeOut;
-
-        setDisplayPercentage(currentPercentage);
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        }
+        setDisplayPercentage(
+          startPercentage + (percentage - startPercentage) * easeOut,
+        );
+        if (progress < 1) requestAnimationFrame(animate);
       };
 
       requestAnimationFrame(animate);
     }
-  }, [percentage, displayPercentage]);
-
-  // Animate progress bar fill
-  useEffect(() => {
-    if (percentage > 0) {
-      const duration = 2000; // 2 seconds
-      const startTime = Date.now();
-      const startPercentage = displayPercentage;
-
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function for smooth animation
-        const easeOut = 1 - Math.pow(1 - progress, 3);
-        const currentPercentage =
-          startPercentage + (percentage - startPercentage) * easeOut;
-
-        setDisplayPercentage(currentPercentage);
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        }
-      };
-
-      requestAnimationFrame(animate);
-    }
-  }, [percentage, displayPercentage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [percentage]);
 
   const handleToastClose = () => {
     setNewSupporter(null);
   };
 
-  const testToast = () => {
-    setNewSupporter({
-      id: 999999,
-      amount: 25,
-      name: "Test User",
-      is_anonymous: false,
-      currency_symbol: "£",
-    });
-  };
-
   return (
     <div className="app">
-      <div className="card">
+      <div className="card-wrapper">
         <Toast supporter={newSupporter} onClose={handleToastClose} />
-        <h1 className="dnpf-heading">
-          <SparklyText
-            lines={["Do Not Worry", "Podcast Fundraiser"]}
-            colors={[
-              "#ff8000",
-              "#ffe163",
-              "#fea5d9",
-              "#0dc2f5",
-              "#02f2a8",
-              "#06efa7",
-              "#fee062",
-              "#faa906",
-              "#fe8002",
-            ]}
-          />
-        </h1>
-        <ConfettiAnimation trigger={celebrationTrigger} />
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <>
-            <div className="main-amount">
-              <span className="currency-large">{currency}</span>
-              <AnimatedNumber value={amount} />
+        <div className="card">
+          <div className="card__flag-bar card__flag-bar--left" />
+          <div className="card__body">
+            <div className="card__cedar">
+              <div className="card__cedar-glow" />
+              <img
+                src={CedarSvg}
+                className="card__cedar-icon"
+                alt="Cedar tree"
+              />
             </div>
-            <p className="raised-of-target">
-              Raised of{" "}
-              <span className="target-amount">
-                {currency}
-                <AnimatedNumber value={target} />
-              </span>
-            </p>
-            <div className="progress">
-              <div
-                className="progress-bar"
-                style={{ width: `${displayPercentage}%` }}
-              ></div>
+            <div className="card__content">
+              <SparklyText
+                lines={["Do Not Worry", "Podcast Fundraiser"]}
+                colors={SPARKLY_COLORS}
+              />
+              <ConfettiAnimation trigger={celebrationTrigger} />
+              {loading ? (
+                <p className="card__loading">Loading…</p>
+              ) : (
+                <div className="card__stats">
+                  <div className="card__amount-row">
+                    <span className="card__amount">
+                      {currency}
+                      <AnimatedNumber value={amount} />
+                    </span>
+                    <span className="card__raised-label">
+                      raised of{" "}
+                      <strong>
+                        {currency}
+                        {target.toLocaleString("en-US")}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="card__progress">
+                    <div className="progress-track">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${displayPercentage}%` }}
+                      />
+                    </div>
+                    <div className="progress-labels">
+                      <span>Started</span>
+                      <span className="progress-labels__pct">
+                        {Math.round(displayPercentage)}% Completed
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            {/* <button
-              onClick={testToast}
-              style={{
-                marginTop: "1rem",
-                padding: "0.5rem 1rem",
-                background: "#007a3d",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Test Toast
-            </button> */}
-          </>
-        )}
+          </div>
+          <div className="card__flag-bar card__flag-bar--right" />
+        </div>
       </div>
     </div>
   );
