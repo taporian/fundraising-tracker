@@ -25,79 +25,35 @@ body {
 
 .card {
   width: 100%;
-  background: #fff;
+  background: rgba(31, 32, 40, 0.95);
   border-radius: 12px;
-  // White ring lifts card off dark background; outer shadow adds depth
+  border-left: 4px solid #66ccff;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.12),
-    0 8px 32px rgba(0, 0, 0, 0.55),
-    0 2px 8px rgba(0, 0, 0, 0.35);
-  overflow: hidden;
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: row;
-  align-items: stretch;
-  font-family: "Inter", system-ui, sans-serif;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  box-sizing: border-box;
+  font-family: "Montserrat", "Inter", system-ui, sans-serif;
 
-  &__flag-bar {
-    width: 18px;
+  &__logo {
     flex-shrink: 0;
-
-    &--left {
-      background: var(--theme-flag-bar-left, #ce1126);
-    }
-
-    &--right {
-      background: var(--theme-flag-bar-right, #007a3d);
-    }
-  }
-
-  &__body {
-    flex: 1;
-    padding: 0.75rem 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    min-width: 0;
-    height: 150px;
-    box-sizing: border-box;
-    overflow: hidden;
-  }
-
-  &__cedar {
+    width: 128px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    position: relative;
-    width: 90px;
-    align-self: stretch; // fill full card height so glow has room
-    overflow: visible;
+    // Subtle cyan glow echoes the accent border colour
+    filter: drop-shadow(0 0 14px rgba(102, 204, 255, 0.22));
   }
 
-  &__cedar-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 160px;
-    height: 160px;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(
-      circle,
-      var(--theme-cedar-color, #00a850) 0%,
-      transparent 70%
-    );
-    opacity: 0.28;
-    filter: blur(8px);
-    border-radius: 50%;
-    pointer-events: none;
-  }
-
-  &__cedar-icon {
-    width: 90px;
-    height: 90px;
+  &__logo-img {
+    width: 100%;
+    height: auto;
     object-fit: contain;
-    position: relative;
-    z-index: 1;
     user-select: none;
   }
 
@@ -105,102 +61,83 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 0.25rem;
+    gap: 0.45rem;
     min-width: 0;
-    overflow: hidden;
-    height: 100%;
+    // Lock the card to its loaded height so loading state doesn't cause a jump
+    min-height: 72px;
+  }
+
+  &__header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    // Reserve the same height as the loaded state (amount is 1.4rem line-height 1)
+    // so the title never shifts when the amount appears
+    min-height: 2rem;
   }
 
   &__title {
-    font-size: 0.88rem;
-    font-weight: 900;
-    color: #0f172a;
-    line-height: 1.2;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #66ccff;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
-    margin: 0 0 0.7rem;
-  }
-
-  &__title-accent {
-    color: var(--theme-title-accent, #ce1126);
-  }
-
-  &__loading {
-    color: #64748b;
-    font-size: 0.9rem;
+    letter-spacing: 0.1em;
     margin: 0;
-  }
-
-  &__stats {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  &__amount-row {
-    display: flex;
-    align-items: baseline;
-    gap: 0.6rem;
-    flex-wrap: wrap;
+    line-height: 1;
   }
 
   &__amount {
-    font-size: 1.7rem;
-    font-weight: 900;
-    letter-spacing: -0.04em;
-    color: var(--theme-amount-color, #4caf50);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #4ade80;
+    letter-spacing: -0.03em;
     display: inline-flex;
     align-items: baseline;
     line-height: 1;
   }
 
-  &__raised-label {
-    color: #64748b;
-    font-size: 0.72rem;
-    font-weight: 500;
-
-    strong {
-      color: #334155;
-      font-weight: 700;
-    }
+  &__loading {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin: 0;
   }
 
   &__progress {
     width: 100%;
   }
-}
 
-.progress-track {
-  width: 99%;
-  height: 0.75rem;
-  background: #f1f5f9;
-  border-radius: 9999px;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
+  &__meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-  .progress-fill {
-    height: 100%;
-    background: var(
-      --theme-progress-bar-bg,
-      linear-gradient(90deg, #ce1126 0%, #007a3d 100%)
-    );
-    border-radius: 9999px;
-    transition: width 0.5s ease;
+  &__meta-left {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #ff6b9d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__meta-right {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #9ca3af;
   }
 }
 
-.progress-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.25rem;
-  font-size: 0.52rem;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+.progress-track {
+  width: 100%;
+  height: 0.5rem;
+  background: #2a2c35;
+  border-radius: 9999px;
+  overflow: hidden;
 
-  &__pct {
-    color: var(--theme-amount-color, #4caf50);
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9966 0%, #ff6b9d 50%, #66ccff 100%);
+    border-radius: 9999px;
+    transition: width 0.5s ease;
   }
 }

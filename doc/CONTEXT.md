@@ -19,8 +19,8 @@
   - Prefer over-documenting to under-documenting. This document should make it
     possible for an AI to work on this codebase with zero additional file reads.
 
-  Last updated: after horizontal white-card redesign, cedar SVG, SparklyText
-  two-line restore, and card-height-stability fix.
+  Last updated: dark card redesign, DNW logo PNG, favicon,
+  AnimatedNumber mount-guard fix, TTS_MIN_AMOUNT threshold.
 -->
 
 # Fundraising Tracker — AI Context Document
@@ -39,15 +39,15 @@ The campaign: **"Do Not Worry Podcast Fundraiser"**, Chuffed.org campaign ID `14
 
 ## Stack
 
-| Technology      | Version | Role                                      |
-| --------------- | ------- | ----------------------------------------- |
-| React           | 19      | UI framework                              |
-| Vite            | 7       | Dev server and bundler                    |
-| Sass            | latest  | Component stylesheets (`.scss`)           |
-| Framer Motion   | 12      | SparklyText per-letter rainbow animation  |
-| canvas-confetti | 1.9     | Confetti burst on goal reached            |
-| Inter           | —       | Google Font, linked in `index.html`       |
-| Cedar_tiles.svg | —       | Lebanese cedar tree icon in `src/assets/` |
+| Technology      | Version | Role                                        |
+| --------------- | ------- | ------------------------------------------- |
+| React           | 19      | UI framework                                |
+| Vite            | 7       | Dev server and bundler                      |
+| Sass            | latest  | Component stylesheets (`.scss`)             |
+| Framer Motion   | 12      | SparklyText per-letter rainbow animation    |
+| canvas-confetti | 1.9     | Confetti burst on goal reached              |
+| Inter           | —       | Google Font, linked in `index.html`         |
+| dnw-logo.png    | —       | DNW logo PNG in `src/assets/` and `public/` |
 
 No router, no global state library, no backend. Everything runs in the browser.
 API calls go directly from the browser to Chuffed.org's public API — no proxy.
@@ -58,24 +58,27 @@ API calls go directly from the browser to Chuffed.org's public API — no proxy.
 
 ```
 /
-├── .env                          # VITE_THEME=1 or VITE_THEME=2 — controls active theme
-├── index.html                    # Links Inter font (Google Fonts) and Material Symbols (unused but keep)
+├── .env                          # VITE_THEME env var no longer used (Variation 4 has fixed palette)
+├── index.html                    # favicon → /favicon.png (DNW logo, square, transparent bg)
 ├── vite.config.js
 ├── package.json
 ├── eslint.config.js
 ├── doc/
 │   └── CONTEXT.md                # This file — AI context document
 ├── public/
+│   ├── favicon.png               # Square transparent-bg favicon generated from dnw-logo.png
+│   └── dnw-logo.png              # Copy of the logo for static serving if needed
 └── src/
     ├── main.jsx                  # React entry point — renders <App /> into #root
     ├── index.css                 # Bare reset only — DO NOT add card styles here
     ├── console.js                # (unused utility, do not delete)
-    ├── constants.js              # All magic values: URLs, campaign ID, intervals, active theme
-    ├── themes.js                 # Theme colour definitions keyed by theme number
+    ├── constants.js              # All magic values: URLs, campaign ID, intervals, TTS settings
+    ├── themes.js                 # Theme definitions — kept for reference, no longer used at runtime
     ├── App.jsx                   # Root component — all state, all polling, layout
-    ├── App.scss                  # All card styles — BEM, SCSS, CSS custom props for theming
+    ├── App.scss                  # All card styles — BEM, SCSS (Variation 4 dark palette)
     ├── assets/
-    │   └── Cedar_tiles.svg       # Lebanese cedar tree — single tree, viewBox 0 0 272.44444 247
+    │   ├── Cedar_tiles.svg       # Lebanese cedar tree — kept, no longer used in main card
+    │   └── dnw-logo.png          # DNW logo used in card and as favicon source
     ├── api/
     │   └── chuffed.js            # All network calls to Chuffed.org — two exported async functions
     └── components/
@@ -84,8 +87,8 @@ API calls go directly from the browser to Chuffed.org's public API — no proxy.
         ├── ConfettiAnimation.jsx # canvas-confetti burst, triggered by prop
         ├── ConfettiButton.jsx    # (unused component, do not delete)
         ├── FireworksDisplay.jsx  # (unused component, do not delete)
-        ├── SparklyText.jsx       # Per-character rainbow animated heading using Framer Motion
-        ├── SparklyText.scss      # SparklyText layout and colour filter for white background
+        ├── SparklyText.jsx       # Per-character rainbow animated heading (unused in V4, do not delete)
+        ├── SparklyText.scss
         ├── Toast.jsx             # Superchat-style slide-in supporter notification
         └── Toast.scss
 ```
@@ -94,46 +97,40 @@ API calls go directly from the browser to Chuffed.org's public API — no proxy.
 
 ## Card layout — CRITICAL — read this before touching any layout CSS
 
-The card is a **horizontal flex container** on a dark background. Layout summary:
+The card is a **Variation 4 dark design** ported from a Figma export. Layout summary:
 
 ```
 .app                    — full-viewport flex, centers .card-wrapper
   .card-wrapper         — max-width 480px, position: relative (Toast anchor)
     <Toast />           — position: absolute inside .card-wrapper, NOT inside .card
-    .card               — white pill, horizontal flex row, overflow: hidden
-      .card__flag-bar--left   — solid colour bar, 18px wide, full height
-      .card__body             — flex row, fixed height 150px, overflow: hidden
-        .card__cedar          — 90px wide, align-self: stretch, position: relative
-          .card__cedar-glow   — radial gradient blob behind tree (decorative)
-          <img cedar-icon>    — the Cedar_tiles.svg, 90×90px
-        .card__content        — flex column, justify-content: flex-start (MUST stay flex-start)
-          <SparklyText />     — always two lines: "Do Not Worry" / "Podcast Fundraiser"
-          <ConfettiAnimation />
-          (loading or stats)
-      .card__flag-bar--right  — solid colour bar, 18px wide, full height
+    <ConfettiAnimation />
+    .card               — dark pill (#1f2028), horizontal flex row, left cyan border
+      .card__logo       — 128px wide, holds <img> of dnw-logo.png
+      .card__content    — flex column, gap 0.45rem
+        .card__header-row   — flex row: title left, amount right
+          h3.card__title    — "DNW Fundraiser", cyan, uppercase, tiny
+          .card__amount     — green, large, AnimatedNumber (hidden while loading)
+        (loading text OR:)
+        .card__progress     — progress bar wrapper
+          .progress-track   — dark track
+            .progress-fill  — pink→magenta→cyan gradient
+        .card__meta-row     — percentage + goal label left, "Active" right
 ```
 
-### Why `.card__body` has a fixed height
+### Why `<AnimatedNumber>` is guarded by `!loading`
 
-`height: 150px` on `.card__body` prevents a visible height jump between the loading
-state (SparklyText + "Loading…" text) and the loaded state (SparklyText + amount +
-progress bar). Without a fixed height the card expands when stats load. **Do not
-remove this fixed height.** If you need more vertical space, increase the value —
-do not switch to `min-height` or `auto`.
-
-### Why `.card__content` uses `justify-content: flex-start`
-
-Changing this to `center` or `space-between` causes the SparklyText title to shift
-downward when the card loads stats, because the content column height changes and
-flex centering re-centres it. `flex-start` pins the title to the top of the column
-at all times.
+`AnimatedNumber` renders digit slots based on the digit count of the current value.
+If it mounts with `value=0` (1 digit) and then `amount` changes to e.g. `12504`
+(5 digits), the new digit slots appear instantaneously at their final values while
+only the first digit animates — producing a glitch like `02,504 → 12,504`. The fix
+is to keep `AnimatedNumber` unmounted during loading so it always mounts with the
+correct digit count. After first load it stays mounted and rolls on every update.
 
 ### Why `<Toast>` is outside `.card`
 
-`.card` has `overflow: hidden` (needed to clip the flag bars flush to the rounded
-corners). If `<Toast>` were inside `.card`, its slide-in animation (`translateX`)
-would be clipped and never be visible. It must live in `.card-wrapper` which has
-`position: relative` but no overflow clipping.
+`.card` has no `overflow: hidden` in V4 (no flag bars to clip), but `<Toast>` must
+still stay in `.card-wrapper` (which has `position: relative`) to anchor its
+`position: absolute` correctly.
 
 ---
 
@@ -164,127 +161,88 @@ export const CAMPAIGN_ID = 147526;
 export const GRAPHQL_URL = "https://chuffed.org/api/graphql";
 export const SUPPORTERS_URL = `https://chuffed.org/api/v2/campaigns/${CAMPAIGN_ID}/supporters`;
 export const FETCH_INTERVAL_MS = 5000;
-export const ACTIVE_THEME = Number(import.meta.env.VITE_THEME ?? 1);
+export const TTS_ENABLED = true;
+export const TTS_VOICE = "Google UK English Female";
+export const TTS_MIN_AMOUNT = 50;
 ```
 
 - `CAMPAIGN_ID` — Chuffed campaign ID. Used by both the GraphQL query and `SUPPORTERS_URL`.
 - `FETCH_INTERVAL_MS` — polling interval in milliseconds (both API calls).
-- `ACTIVE_THEME` — reads `VITE_THEME` from `.env`. Falls back to `1`. Converted to
-  Number because env vars are always strings.
+- `TTS_ENABLED` — set to `false` to silence all speech entirely.
+- `TTS_VOICE` — browser voice name for TTS. See file comments for full list.
+- `TTS_MIN_AMOUNT` — minimum donation amount (in main currency units, e.g. £) required
+  to trigger a spoken announcement. Donations below this value still show the Toast
+  notification but are not read aloud. Set to `0` to speak all donations.
 
 ---
 
-## src/themes.js — theme colour definitions
+## src/themes.js — theme colour definitions (retained, not active)
 
-Two themes exist. Selected by `ACTIVE_THEME`. Currently `.env` has `VITE_THEME=2`.
+Two themes (Palestinian, Lebanese) are defined here. The theme system is no longer
+used at runtime — `App.jsx` and `App.scss` use a hardcoded dark palette. `themes.js`
+is kept in case the theme system is restored in future. Do not delete it.
 
-Theme objects are consumed **exclusively in `App.jsx`** at module level (outside the
-component function) to set CSS custom properties on `document.documentElement`.
-Components never import `themes.js` directly.
+### Current card colours (set in App.jsx at module level)
 
-### CSS custom properties applied at startup
-
-| Property                     | What it controls                                 |
-| ---------------------------- | ------------------------------------------------ |
-| `--theme-flag-bar-left`      | Background colour of `.card__flag-bar--left`     |
-| `--theme-flag-bar-right`     | Background colour of `.card__flag-bar--right`    |
-| `--theme-progress-bar-bg`    | Progress bar fill (gradient or solid)            |
-| `--theme-amount-color`       | Collected amount text colour                     |
-| `--theme-title-accent`       | `.card__title-accent` colour (podcast name line) |
-| `--theme-cedar-color`        | Cedar glow radial gradient colour                |
-| `--theme-toast-gradient`     | Toast notification background gradient           |
-| `--theme-toast-amount-color` | Amount text inside the Toast                     |
-
-### Theme 1 — Palestinian
-
-```js
-flagBarLeft:    "#CE1126",   // red
-flagBarRight:   "#007A3D",   // green
-progressBarBg:  "linear-gradient(90deg, #CE1126 0%, #007A3D 100%)",
-amountColor:    "#007A3D",
-titleAccentColor: "#CE1126",
-cedarColor:     "#007A3D",
-toastGradient:  "linear-gradient(135deg, #007A3D 0%, #CE1126 100%)",
-toastAmountColor: "#ffe163",
-```
-
-### Theme 2 — Lebanese (currently active)
-
-```js
-flagBarLeft:    "#EE161F",   // red — Lebanese flag has red on both sides
-flagBarRight:   "#EE161F",   // red
-progressBarBg:  "linear-gradient(90deg, #EE161F 0%, #00A850 100%)",
-amountColor:    "#00A850",   // exact Lebanese flag cedar green
-titleAccentColor: "#EE161F",
-cedarColor:     "#00A850",
-toastGradient:  "linear-gradient(135deg, #007A3D 0%, #CE1126 100%)",
-toastAmountColor: "#ffe163",
-```
+| CSS custom property          | Value                                               | What it controls     |
+| ---------------------------- | --------------------------------------------------- | -------------------- |
+| `--theme-toast-gradient`     | `linear-gradient(135deg, #FF6B9D 0%, #66CCFF 100%)` | Toast background     |
+| `--theme-toast-amount-color` | `#4ade80`                                           | Amount text in Toast |
 
 ---
 
-## src/App.scss — all card styles
+## src/App.scss — all card styles (dark palette)
 
 ### Key CSS class reference
 
-| Class                 | Role                                                          |
-| --------------------- | ------------------------------------------------------------- |
-| `.app`                | Full viewport, flex, centres `.card-wrapper`                  |
-| `.card-wrapper`       | `max-width: 480px`, `position: relative` — Toast anchor       |
-| `.card`               | White pill, `overflow: hidden`, horizontal flex, Inter font   |
-| `.card__flag-bar`     | `width: 18px`, full height colour bar                         |
-| `.card__body`         | `height: 150px` (fixed!), `overflow: hidden`, horizontal flex |
-| `.card__cedar`        | `width: 90px`, `align-self: stretch`, tree + glow wrapper     |
-| `.card__cedar-glow`   | Radial gradient blob, `opacity: 0.28`, `filter: blur(8px)`    |
-| `.card__cedar-icon`   | `<img>` of Cedar_tiles.svg, `width: 90px; height: 90px`       |
-| `.card__content`      | Flex column, `justify-content: flex-start` ← DO NOT CHANGE    |
-| `.card__title`        | `color: #0f172a` ← near-black, DO NOT CHANGE                  |
-| `.card__title-accent` | `color: var(--theme-title-accent, #ce1126)` ← DO NOT CHANGE   |
-| `.card__stats`        | Amount + progress section                                     |
-| `.card__amount-row`   | Amount + "raised of" label, horizontal                        |
-| `.card__amount`       | `font-size: 1.7rem`, `color: var(--theme-amount-color)`       |
-| `.card__raised-label` | Smaller text: "raised of £X,XXX"                              |
-| `.card__loading`      | "Loading…" placeholder text                                   |
-| `.progress-track`     | `width: 99%`, `height: 0.75rem`, rounded track                |
-| `.progress-fill`      | `background: var(--theme-progress-bar-bg)`, animated width    |
-| `.progress-labels`    | `font-size: 0.52rem` percentage labels below bar              |
-
-### Title colour rules — NEVER CHANGE THESE
-
-```scss
-.card__title {
-  color: #0f172a; // near-black — hardcoded, not themed, not important
-}
-.card__title-accent {
-  color: var(--theme-title-accent, #ce1126); // themed red
-}
-```
-
-Do NOT add `!important`. Do NOT hardcode a different colour. Do NOT move these into
-a theme object. The title text is always dark-on-white; only the accent line is themed.
+| Class              | Role                                                                   |
+| ------------------ | ---------------------------------------------------------------------- |
+| `.app`             | Full viewport, flex, centres `.card-wrapper`                           |
+| `.card-wrapper`    | `max-width: 480px`, `position: relative` — Toast anchor                |
+| `.card`            | Dark pill `rgba(31,32,40,0.95)`, `border-left: 4px solid #66ccff`     |
+| `.card__logo`      | `width: 128px`, flex-shrink 0, holds DNW logo PNG                     |
+| `.card__logo-img`  | `width: 100%`, `height: auto`, `object-fit: contain`                  |
+| `.card__content`   | Flex column, `gap: 0.45rem`                                            |
+| `.card__header-row`| Flex row, space-between: title left, amount right                      |
+| `.card__title`     | `color: #66ccff`, uppercase, `font-size: 0.65rem`, bold               |
+| `.card__amount`    | `color: #4ade80`, `font-size: 1.4rem`, bold — **only shown after load**|
+| `.card__loading`   | "Loading…" placeholder, `color: #9ca3af`                              |
+| `.card__progress`  | Progress bar wrapper                                                   |
+| `.card__meta-row`  | Flex row, space-between                                                |
+| `.card__meta-left` | `color: #ff6b9d`, uppercase tiny — percentage + goal                  |
+| `.card__meta-right`| `color: #9ca3af` — "Active" status label                              |
+| `.progress-track`  | `height: 0.5rem`, `background: #2a2c35`, rounded                      |
+| `.progress-fill`   | `background: linear-gradient(90deg, #ff9966, #ff6b9d, #66ccff)`       |
 
 ### html/body background
 
 ```scss
-html,
-body {
-  background: #2c2c2c; // dark grey — the "stage" behind the card
-}
+html, body { background: #2c2c2c; } // dark grey stage behind the card
 ```
 
 ---
 
-## src/assets/Cedar_tiles.svg — the cedar tree icon
+## src/assets/dnw-logo.png — primary logo
 
-A single Lebanese cedar tree. The SVG was edited down from a 9-tree tile sheet:
+- Source: Figma export asset `2948d085ef6ce208f4bff2140ba68811310a3142.png` from
+  `src/Fundraiser Card Variations/src/assets/`
+- Copied into `src/assets/dnw-logo.png` for use in the React app
+- Also copied into `public/dnw-logo.png` for static serving
+- Original dimensions: 2338×827px (very wide)
+- Imported in `App.jsx` as `import DnwLogo from "./assets/dnw-logo.png"`
+- Rendered as `<img src={DnwLogo} className="card__logo-img" alt="DNW Logo" />`
 
-- All 8 `<use>` clone elements were removed, leaving only the original `<path>`
-- viewBox shrunk from `0 0 817 741` to `0 0 272.44444 247`
-- `fill: #00813b` on the path (overridden at render time by CSS if needed)
-- Imported as a URL in `App.jsx` via `import CedarSvg from "./assets/Cedar_tiles.svg"`
-- Rendered as `<img src={CedarSvg} className="card__cedar-icon" alt="Cedar tree" />`
+## public/favicon.png — browser tab icon
 
-**Do not re-add `<use>` elements.** The tile layout was intentionally removed.
+- Generated from `dnw-logo.png` via ImageMagick:
+  `magick dnw-logo.png -resize 512x512 -gravity center -background none -extent 512x512 favicon.png`
+- 512×512, transparent background — logo fills full width, centred vertically
+- Referenced in `index.html` as `<link rel="icon" type="image/png" href="/favicon.png" />`
+
+## src/assets/Cedar_tiles.svg — kept, not used in main card
+
+Edited single-tree cedar SVG from original tile sheet. No longer rendered in the
+main card after the V4 redesign. Do not delete — may be reused.
 
 ---
 
@@ -293,85 +251,39 @@ A single Lebanese cedar tree. The SVG was edited down from a 9-tree tile sheet:
 ### Imports
 
 ```js
-import CedarSvg from "./assets/Cedar_tiles.svg";
-import SparklyText from "./components/SparklyText";
-import { THEMES } from "./themes";
-import { FETCH_INTERVAL_MS, ACTIVE_THEME } from "./constants";
+import DnwLogo from "./assets/dnw-logo.png";
+import { FETCH_INTERVAL_MS, TTS_ENABLED, TTS_VOICE, TTS_MIN_AMOUNT } from "./constants";
 import { fetchCampaign, fetchLatestSupporter } from "./api/chuffed";
 ```
 
-### Module-level theme application (outside component, runs once on import)
+`SparklyText`, `CedarSvg`, `THEMES`, and `ACTIVE_THEME` are no longer imported.
+
+### Module-level CSS var application (outside component, runs once on import)
+
+Only the two Toast-related CSS vars are set — the rest of V4's palette is hardcoded
+in `App.scss`:
 
 ```js
-const theme = THEMES[ACTIVE_THEME] ?? THEMES[1];
-document.documentElement.style.setProperty(
-  "--theme-flag-bar-left",
-  theme.flagBarLeft,
-);
-document.documentElement.style.setProperty(
-  "--theme-flag-bar-right",
-  theme.flagBarRight,
-);
-document.documentElement.style.setProperty(
-  "--theme-progress-bar-bg",
-  theme.progressBarBg,
-);
-document.documentElement.style.setProperty(
-  "--theme-amount-color",
-  theme.amountColor,
-);
-document.documentElement.style.setProperty(
-  "--theme-title-accent",
-  theme.titleAccentColor,
-);
-document.documentElement.style.setProperty(
-  "--theme-cedar-color",
-  theme.cedarColor,
-);
 document.documentElement.style.setProperty(
   "--theme-toast-gradient",
-  theme.toastGradient,
+  "linear-gradient(135deg, #FF6B9D 0%, #66CCFF 100%)",
 );
-document.documentElement.style.setProperty(
-  "--theme-toast-amount-color",
-  theme.toastAmountColor,
-);
+document.documentElement.style.setProperty("--theme-toast-amount-color", "#4ade80");
 ```
-
-This runs before the first render. All theming flows through CSS vars on `:root`.
-No inline styles on JSX elements for theming.
-
-### SparklyText colours (NOT themed)
-
-```js
-const SPARKLY_COLORS = [
-  "#FF8000",
-  "#FFE163",
-  "#FEA5D9",
-  "#0DC2F5",
-  "#02F2A8",
-  "#06EFA7",
-  "#FEE062",
-  "#FAA906",
-];
-```
-
-These are module-level constants. They are rainbow/warm colours hardcoded for the
-heading — not part of the theme system. The heading always looks the same regardless
-of which theme is active.
 
 ### State
 
-| State variable       | Type         | Purpose                                                        |
-| -------------------- | ------------ | -------------------------------------------------------------- |
-| `amount`             | number       | Collected amount in main currency units                        |
-| `target`             | number       | Target amount in main currency units                           |
-| `currency`           | string       | Currency symbol, e.g. `"£"`                                    |
-| `percentage`         | number       | `(amount / target) * 100`, capped at 100                       |
-| `displayPercentage`  | number       | Animated version of `percentage` — drives progress bar width   |
-| `loading`            | boolean      | True until first successful `fetchCampaign()` response         |
-| `celebrationTrigger` | boolean      | Pulses to `true` for 5s when amount === target                 |
-| `newSupporter`       | object\|null | Supporter object shown in Toast; set to null when Toast closes |
+| State variable       | Type         | Purpose                                                                    |
+| -------------------- | ------------ | -------------------------------------------------------------------------- |
+| `amount`             | number       | Collected amount in main currency units                                    |
+| `target`             | number       | Target amount in main currency units                                       |
+| `currency`           | string       | Currency symbol, e.g. `"£"`                                                |
+| `percentage`         | number       | `(amount / target) * 100`, capped at 100                                   |
+| `displayPercentage`  | number       | Animated version of `percentage` — drives progress bar width               |
+| `loading`            | boolean      | True until first successful `fetchCampaign()` response                     |
+| `celebrationTrigger` | boolean      | Pulses to `true` for 5s when amount === target                             |
+| `newSupporter`       | object\|null | Supporter object shown in Toast; set to null when Toast closes             |
+| `soundUnlocked`      | boolean      | Whether user has clicked to unlock browser speech. Mirrors `soundUnlockedRef` as state so the unlock button re-renders away. |
 
 ### Ref — toast deduplication
 
@@ -390,14 +302,25 @@ renders without causing re-renders and is NOT reset when toast state clears.
 Defines `loadCampaign` and `loadSupporters`, calls both immediately, then repeats
 both every `FETCH_INTERVAL_MS` via `setInterval`. Returns cleanup that clears interval.
 
-Supporter deduplication check:
+Supporter deduplication check + TTS threshold:
 
 ```js
 if (latest.id !== lastSupporterIdRef.current) {
   lastSupporterIdRef.current = latest.id;
-  setNewSupporter(latest);
+  setNewSupporter(latest); // always show Toast
+  // Only speak if donation meets the minimum threshold
+  if (Number(latest.amount) >= TTS_MIN_AMOUNT) {
+    if (soundUnlockedRef.current) {
+      speakTts(text);
+    } else {
+      pendingTtsRef.current = text;
+    }
+  }
 }
 ```
+
+The Toast always appears regardless of amount. Only the spoken announcement is
+threshold-gated. `TTS_MIN_AMOUNT` is set in `constants.js`.
 
 On first load `lastSupporterIdRef.current` is `null`, so the latest supporter
 **always** shows on page load/refresh. On subsequent polls, only a new ID triggers Toast.
@@ -530,14 +453,53 @@ for consistent comma separators), splits into chars. Commas render as static
 
 | Bug                                           | Root cause                                                                                        | Fix                                                                                                           |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Card background was dark (#111)               | Duplicate old CSS block remained in App.scss after rewrite                                        | Removed the duplicate block; App.scss now has exactly one `.card { background: #fff }` rule                   |
+| Card background was dark (#111)               | Duplicate old CSS block remained in App.scss after rewrite                                        | Removed the duplicate block                                                                                   |
 | Old index.css overriding white card           | `index.css` had `.card { background: #2c2c2c }` from original design                              | Stripped all rules from `index.css`, kept only bare html/body reset                                           |
-| Toast clipped, never visible                  | `<Toast>` was inside `.card` which has `overflow: hidden`                                         | Moved `<Toast>` outside `.card`, into `.card-wrapper` which has `position: relative` but no overflow clipping |
-| Card height jumps on first load               | `__body` had no fixed height; loading state was shorter than loaded state                         | Added `height: 150px; overflow: hidden` to `.card__body`                                                      |
-| SparklyText title shifts on load              | `.card__content` had `justify-content: center`; centering recalculates as stats render            | Changed to `justify-content: flex-start` — title stays pinned to top                                          |
+| Toast clipped, never visible                  | `<Toast>` was inside `.card` which has `overflow: hidden`                                         | Moved `<Toast>` outside `.card`, into `.card-wrapper`                                                         |
+| Card height jumps on first load               | `__body` had no fixed height; loading state was shorter than loaded state                         | Added `height: 150px; overflow: hidden` to `.card__body` (pre-V4; V4 uses natural height)                     |
+| SparklyText title shifts on load              | `.card__content` had `justify-content: center`                                                    | Changed to `justify-content: flex-start` (pre-V4; V4 doesn't use SparklyText)                                 |
 | Same supporter re-appeared after Toast closed | Toast-close called `setNewSupporter(null)` (state), causing re-render; next poll saw `null` again | Replaced `lastSupporterId` state with `lastSupporterIdRef = useRef(null)` — ref doesn't trigger re-render     |
-| 9 cedar trees shown                           | Cedar_tiles.svg was a tile sheet with 1 original + 8 `<use>` clones                               | Removed all 8 `<use>` elements; shrank viewBox from `817×741` to `272×247`                                    |
-| Title colours being accidentally changed      | Prior CSS edits hardcoded wrong values or added `!important`                                      | Stabilised as `#0f172a` (title) and `var(--theme-title-accent, #ce1126)` (accent); no `!important`            |
+| AnimatedNumber shows `02,504` glitch on load  | Component mounted with `value=0`, new digit slots appeared instantly at final values              | Guard `<AnimatedNumber>` with `!loading` so it always mounts with correct digit count                         |
+| Favicon stretched in browser tab              | Logo PNG is 2338×827 (very wide); browsers squash non-square favicons                             | Generated `favicon.png` via ImageMagick: 512×512, transparent bg, logo centred                                |
+
+---
+
+## Future option: Comments API
+
+Chuffed provides a comments endpoint separate from supporters:
+
+```
+GET https://chuffed.org/api/v2/campaigns/{CAMPAIGN_ID}/comments
+```
+
+Response shape:
+```json
+{
+  "data": [
+    {
+      "id": 100248,
+      "is_anonymous": false,
+      "children_count": 0,
+      "content": "Comment text here",
+      "user": {
+        "data": {
+          "id": 2363809,
+          "image": null,
+          "first_name": "Doan",
+          "last_name": "Nguyen"
+        }
+      }
+    }
+  ],
+  "meta": { "total": 2, "offset": 0, "limit": 250, "count": 2 }
+}
+```
+
+Key differences from supporters: no `amount`, no `currency_symbol` — just `content`
+and `user`. If implemented, a `fetchLatestComment()` function should follow the same
+structure as `fetchLatestSupporter()` and use `id` for deduplication. A separate
+Toast variant (or the existing Toast extended) would display the comment text.
+This was not implemented — noted here for future reference.
 
 ---
 
