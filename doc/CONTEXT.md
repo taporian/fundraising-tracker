@@ -19,8 +19,9 @@
   - Prefer over-documenting to under-documenting. This document should make it
     possible for an AI to work on this codebase with zero additional file reads.
 
-  Last updated: dark card redesign, DNW logo PNG, favicon,
-  AnimatedNumber mount-guard fix, TTS_MIN_AMOUNT threshold.
+  Last updated: dark card redesign, DNW logo PNG, favicon, AnimatedNumber mount-guard
+  fix, TTS_MIN_AMOUNT threshold, Toast rounded corners, card height stability,
+  celebration >= fix, dev +£500 button.
 -->
 
 # Fundraising Tracker — AI Context Document
@@ -195,29 +196,32 @@ is kept in case the theme system is restored in future. Do not delete it.
 
 ### Key CSS class reference
 
-| Class              | Role                                                                   |
-| ------------------ | ---------------------------------------------------------------------- |
-| `.app`             | Full viewport, flex, centres `.card-wrapper`                           |
-| `.card-wrapper`    | `max-width: 480px`, `position: relative` — Toast anchor                |
-| `.card`            | Dark pill `rgba(31,32,40,0.95)`, `border-left: 4px solid #66ccff`     |
-| `.card__logo`      | `width: 128px`, flex-shrink 0, holds DNW logo PNG                     |
-| `.card__logo-img`  | `width: 100%`, `height: auto`, `object-fit: contain`                  |
-| `.card__content`   | Flex column, `gap: 0.45rem`                                            |
-| `.card__header-row`| Flex row, space-between: title left, amount right                      |
-| `.card__title`     | `color: #66ccff`, uppercase, `font-size: 0.65rem`, bold               |
-| `.card__amount`    | `color: #4ade80`, `font-size: 1.4rem`, bold — **only shown after load**|
-| `.card__loading`   | "Loading…" placeholder, `color: #9ca3af`                              |
-| `.card__progress`  | Progress bar wrapper                                                   |
-| `.card__meta-row`  | Flex row, space-between                                                |
-| `.card__meta-left` | `color: #ff6b9d`, uppercase tiny — percentage + goal                  |
-| `.card__meta-right`| `color: #9ca3af` — "Active" status label                              |
-| `.progress-track`  | `height: 0.5rem`, `background: #2a2c35`, rounded                      |
-| `.progress-fill`   | `background: linear-gradient(90deg, #ff9966, #ff6b9d, #66ccff)`       |
+| Class               | Role                                                                    |
+| ------------------- | ----------------------------------------------------------------------- |
+| `.app`              | Full viewport, flex, centres `.card-wrapper`                            |
+| `.card-wrapper`     | `max-width: 480px`, `position: relative` — Toast anchor                 |
+| `.card`             | Dark pill `rgba(31,32,40,0.95)`, `border-left: 4px solid #66ccff`       |
+| `.card__logo`       | `width: 128px`, flex-shrink 0, holds DNW logo PNG                       |
+| `.card__logo-img`   | `width: 100%`, `height: auto`, `object-fit: contain`                    |
+| `.card__content`    | Flex column, `gap: 0.45rem`                                             |
+| `.card__header-row` | Flex row, space-between: title left, amount right                       |
+| `.card__title`      | `color: #66ccff`, uppercase, `font-size: 0.65rem`, bold                 |
+| `.card__amount`     | `color: #4ade80`, `font-size: 1.4rem`, bold — **only shown after load** |
+| `.card__loading`    | "Loading…" placeholder, `color: #9ca3af`                                |
+| `.card__progress`   | Progress bar wrapper                                                    |
+| `.card__meta-row`   | Flex row, space-between                                                 |
+| `.card__meta-left`  | `color: #ff6b9d`, uppercase tiny — percentage + goal                    |
+| `.card__meta-right` | `color: #9ca3af` — "Active" status label                                |
+| `.progress-track`   | `height: 0.5rem`, `background: #2a2c35`, rounded                        |
+| `.progress-fill`    | `background: linear-gradient(90deg, #ff9966, #ff6b9d, #66ccff)`         |
 
 ### html/body background
 
 ```scss
-html, body { background: #2c2c2c; } // dark grey stage behind the card
+html,
+body {
+  background: #2c2c2c;
+} // dark grey stage behind the card
 ```
 
 ---
@@ -252,7 +256,12 @@ main card after the V4 redesign. Do not delete — may be reused.
 
 ```js
 import DnwLogo from "./assets/dnw-logo.png";
-import { FETCH_INTERVAL_MS, TTS_ENABLED, TTS_VOICE, TTS_MIN_AMOUNT } from "./constants";
+import {
+  FETCH_INTERVAL_MS,
+  TTS_ENABLED,
+  TTS_VOICE,
+  TTS_MIN_AMOUNT,
+} from "./constants";
 import { fetchCampaign, fetchLatestSupporter } from "./api/chuffed";
 ```
 
@@ -268,21 +277,24 @@ document.documentElement.style.setProperty(
   "--theme-toast-gradient",
   "linear-gradient(135deg, #FF6B9D 0%, #66CCFF 100%)",
 );
-document.documentElement.style.setProperty("--theme-toast-amount-color", "#4ade80");
+document.documentElement.style.setProperty(
+  "--theme-toast-amount-color",
+  "#4ade80",
+);
 ```
 
 ### State
 
-| State variable       | Type         | Purpose                                                                    |
-| -------------------- | ------------ | -------------------------------------------------------------------------- |
-| `amount`             | number       | Collected amount in main currency units                                    |
-| `target`             | number       | Target amount in main currency units                                       |
-| `currency`           | string       | Currency symbol, e.g. `"£"`                                                |
-| `percentage`         | number       | `(amount / target) * 100`, capped at 100                                   |
-| `displayPercentage`  | number       | Animated version of `percentage` — drives progress bar width               |
-| `loading`            | boolean      | True until first successful `fetchCampaign()` response                     |
-| `celebrationTrigger` | boolean      | Pulses to `true` for 5s when amount === target                             |
-| `newSupporter`       | object\|null | Supporter object shown in Toast; set to null when Toast closes             |
+| State variable       | Type         | Purpose                                                                                                                      |
+| -------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `amount`             | number       | Collected amount in main currency units                                                                                      |
+| `target`             | number       | Target amount in main currency units                                                                                         |
+| `currency`           | string       | Currency symbol, e.g. `"£"`                                                                                                  |
+| `percentage`         | number       | `(amount / target) * 100`, capped at 100                                                                                     |
+| `displayPercentage`  | number       | Animated version of `percentage` — drives progress bar width                                                                 |
+| `loading`            | boolean      | True until first successful `fetchCampaign()` response                                                                       |
+| `celebrationTrigger` | boolean      | Pulses to `true` for 5s when amount === target                                                                               |
+| `newSupporter`       | object\|null | Supporter object shown in Toast; set to null when Toast closes                                                               |
 | `soundUnlocked`      | boolean      | Whether user has clicked to unlock browser speech. Mirrors `soundUnlockedRef` as state so the unlock button re-renders away. |
 
 ### Ref — toast deduplication
@@ -451,16 +463,20 @@ for consistent comma separators), splits into chars. Commas render as static
 
 ## Bugs fixed — do not reintroduce
 
-| Bug                                           | Root cause                                                                                        | Fix                                                                                                           |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Card background was dark (#111)               | Duplicate old CSS block remained in App.scss after rewrite                                        | Removed the duplicate block                                                                                   |
-| Old index.css overriding white card           | `index.css` had `.card { background: #2c2c2c }` from original design                              | Stripped all rules from `index.css`, kept only bare html/body reset                                           |
-| Toast clipped, never visible                  | `<Toast>` was inside `.card` which has `overflow: hidden`                                         | Moved `<Toast>` outside `.card`, into `.card-wrapper`                                                         |
-| Card height jumps on first load               | `__body` had no fixed height; loading state was shorter than loaded state                         | Added `height: 150px; overflow: hidden` to `.card__body` (pre-V4; V4 uses natural height)                     |
-| SparklyText title shifts on load              | `.card__content` had `justify-content: center`                                                    | Changed to `justify-content: flex-start` (pre-V4; V4 doesn't use SparklyText)                                 |
-| Same supporter re-appeared after Toast closed | Toast-close called `setNewSupporter(null)` (state), causing re-render; next poll saw `null` again | Replaced `lastSupporterId` state with `lastSupporterIdRef = useRef(null)` — ref doesn't trigger re-render     |
-| AnimatedNumber shows `02,504` glitch on load  | Component mounted with `value=0`, new digit slots appeared instantly at final values              | Guard `<AnimatedNumber>` with `!loading` so it always mounts with correct digit count                         |
-| Favicon stretched in browser tab              | Logo PNG is 2338×827 (very wide); browsers squash non-square favicons                             | Generated `favicon.png` via ImageMagick: 512×512, transparent bg, logo centred                                |
+| Bug                                           | Root cause                                                                                        | Fix                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Card background was dark (#111)               | Duplicate old CSS block remained in App.scss after rewrite                                        | Removed the duplicate block                                                                               |
+| Old index.css overriding white card           | `index.css` had `.card { background: #2c2c2c }` from original design                              | Stripped all rules from `index.css`, kept only bare html/body reset                                       |
+| Toast clipped, never visible                  | `<Toast>` was inside `.card` which has `overflow: hidden`                                         | Moved `<Toast>` outside `.card`, into `.card-wrapper`                                                     |
+| Card height jumps on first load               | `__body` had no fixed height; loading state was shorter than loaded state                         | Added `height: 150px; overflow: hidden` to `.card__body` (pre-V4; V4 uses natural height)                 |
+| SparklyText title shifts on load              | `.card__content` had `justify-content: center`                                                    | Changed to `justify-content: flex-start` (pre-V4; V4 doesn't use SparklyText)                             |
+| Same supporter re-appeared after Toast closed | Toast-close called `setNewSupporter(null)` (state), causing re-render; next poll saw `null` again | Replaced `lastSupporterId` state with `lastSupporterIdRef = useRef(null)` — ref doesn't trigger re-render |
+| AnimatedNumber shows `02,504` glitch on load  | Component mounted with `value=0`, new digit slots appeared instantly at final values              | Guard `<AnimatedNumber>` with `!loading` so it always mounts with correct digit count                     |
+| Favicon stretched in browser tab              | Logo PNG is 2338×827 (very wide); browsers squash non-square favicons                             | Generated `favicon.png` via ImageMagick: 512×512, transparent bg, logo centred                            |
+| Title "DNW Fundraiser" bounced on load        | `card__header-row` had no fixed height; it grew when the large amount appeared beside the title   | Added `min-height: 2rem` to `.card__header-row` to reserve space from the start                           |
+| Card height jumped on load                    | `card__content` had no minimum height; loading state was shorter than loaded state                | Added `min-height: 72px` to `.card__content`                                                              |
+| Toast had flat right edge                     | `border-radius: 8px 0 0 8px` — intentional for old flush-to-card design                          | Changed to `border-radius: 8px` (all corners rounded)                                                     |
+| Confetti never fired when goal was exceeded   | Celebration check used `amount === target` (strict equality); polling interval can skip exact value | Changed to `amount >= target` so any value at or above goal triggers confetti                            |
 
 ---
 
@@ -473,6 +489,7 @@ GET https://chuffed.org/api/v2/campaigns/{CAMPAIGN_ID}/comments
 ```
 
 Response shape:
+
 ```json
 {
   "data": [
@@ -512,3 +529,6 @@ This was not implemented — noted here for future reference.
 - `eslint-disable-next-line react-hooks/exhaustive-deps` comment in useEffect 3 —
   intentional, removing it would break the animation.
 - `index.css` minimal content — do not add card or component styles here.
+- Dev `+£500` button in `App.jsx` — wrapped in `import.meta.env.DEV` guard, only
+  visible in development. Do not remove — useful for testing animations and confetti.
+  Also bumps `percentage` state proportionally so the progress bar reflects the change.

@@ -5,7 +5,12 @@ import ConfettiAnimation from "./components/ConfettiAnimation";
 import Toast from "./components/Toast";
 import DnwLogo from "./assets/dnw-logo.png";
 import { fetchCampaign, fetchLatestSupporter } from "./api/chuffed";
-import { FETCH_INTERVAL_MS, TTS_ENABLED, TTS_VOICE, TTS_MIN_AMOUNT } from "./constants";
+import {
+  FETCH_INTERVAL_MS,
+  TTS_ENABLED,
+  TTS_VOICE,
+  TTS_MIN_AMOUNT,
+} from "./constants";
 
 // Variation 4 colour palette — toast notification colours
 document.documentElement.style.setProperty(
@@ -101,7 +106,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (amount === target && amount > 0) {
+    if (amount >= target && amount > 0) {
       setCelebrationTrigger(true);
       setTimeout(() => setCelebrationTrigger(false), 5000);
     }
@@ -186,6 +191,30 @@ function App() {
       <div className="card-wrapper">
         <Toast supporter={newSupporter} onClose={handleToastClose} />
         <ConfettiAnimation trigger={celebrationTrigger} />
+        {import.meta.env.DEV && !loading && (
+          <button
+            onClick={() => {
+              setAmount((prev) => prev + 500);
+              setPercentage((prev) =>
+                Math.min(prev + (500 / target) * 100, 100),
+              );
+            }}
+            style={{
+              position: "absolute",
+              bottom: "-2.5rem",
+              right: 0,
+              fontSize: "11px",
+              padding: "4px 10px",
+              background: "#ff6b9d33",
+              color: "#ff6b9d",
+              border: "1px solid #ff6b9d66",
+              borderRadius: "6px",
+              cursor: "pointer",
+            }}
+          >
+            +£500 (dev)
+          </button>
+        )}
         <div className="card">
           <div className="card__logo">
             <img src={DnwLogo} className="card__logo-img" alt="DNW Logo" />
