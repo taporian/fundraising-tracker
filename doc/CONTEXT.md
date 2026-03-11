@@ -21,7 +21,8 @@
 
   Last updated: dark card redesign, DNW logo PNG, favicon, AnimatedNumber mount-guard
   fix, TTS_MIN_AMOUNT threshold, Toast rounded corners, card height stability,
-  celebration >= fix, dev +£500 button.
+  celebration >= fix, dev +£500 button, responsive layout, mobile TTS unlock,
+  TOAST_ENABLED constant, OBS Browser Source setup.
 -->
 
 # Fundraising Tracker — AI Context Document
@@ -532,3 +533,65 @@ This was not implemented — noted here for future reference.
 - Dev `+£500` button in `App.jsx` — wrapped in `import.meta.env.DEV` guard, only
   visible in development. Do not remove — useful for testing animations and confetti.
   Also bumps `percentage` state proportionally so the progress bar reflects the change.
+
+---
+
+## OBS Browser Source setup
+
+This app is designed to run as an **OBS Browser Source** with a transparent background,
+so only the card is visible on stream. No special OBS plugin is needed — OBS has a
+built-in Browser Source.
+
+### Relevant code changes for OBS
+
+- `vite.config.js` — `base: './'` so all asset paths in the built output are relative.
+  This is required when loading `dist/index.html` from disk rather than a web server.
+- `App.scss` — `html, body { background: transparent }` so the page background is
+  invisible in OBS (only the card renders).
+
+### How to build
+
+```bash
+npm run build
+```
+
+Outputs to `dist/`. The entry point is `dist/index.html`.
+
+### How to add as an OBS Browser Source
+
+1. In OBS: **Sources → + → Browser**
+2. Check **"Local file"** and point it to `dist/index.html`
+3. Set **Width: 520**, **Height: 160** (fits the card at its natural size)
+4. In the **Custom CSS** box add:
+   ```css
+   body { background-color: rgba(0, 0, 0, 0) !important; }
+   ```
+5. Click **OK** — the card appears as a transparent overlay
+
+Alternatively, if the app is deployed to a URL (GitHub Pages, Vercel, etc.), paste
+the URL instead of using the local file option. The `base: './'` change does not
+affect hosted deployments.
+
+### TTS in OBS
+
+OBS Browser Source runs in a Chromium-based engine. The Web Speech API is available.
+The `TTS_ENABLED` / `TTS_VOICE` / `TTS_MIN_AMOUNT` constants all work. However,
+autoplay policy means the user must interact before sound works — the **🔊 Click to
+enable donation sounds** button will appear on first load inside OBS; right-click
+the source and select **Interact** to click it, then close the interaction panel.
+
+### TOAST_ENABLED constant
+
+Added to `constants.js`. Set to `false` to hide the donor toast notification
+entirely (e.g. if you want only TTS and no on-screen popup).
+
+```js
+export const TOAST_ENABLED = true; // false to disable donor toast
+```
+
+### Responsive layout
+
+A `@media (max-width: 520px)` block in `App.scss` stacks the card vertically
+(logo above content) on small screens. Uses `100dvh` (dynamic viewport height)
+to account for mobile browser chrome. `touchstart` is registered alongside `click`
+and `keydown` for TTS unlock on iOS Safari.
