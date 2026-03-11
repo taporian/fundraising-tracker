@@ -39,9 +39,13 @@ export const TTS_ENABLED = true;
 //   "Microsoft George Desktop"    – British male
 //
 // Leave as "" to use the browser default voice
-export const TTS_VOICE = "Google UK English Female";
+export const TTS_VOICE = "Google UK English Male";
 
 // Minimum donation amount (in main currency units, e.g. £) that triggers a TTS
 // announcement. Donations below this threshold are shown in the Toast but spoken
 // announcements are skipped. Set to 0 to speak all donations.
 export const TTS_MIN_AMOUNT = 50;
+
+// ── Toast notification settings ──────────────────────────────────────────────
+// Set to false to disable the donor toast notification entirely
+export const TOAST_ENABLED = true;

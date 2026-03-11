@@ -10,6 +10,7 @@ import {
   TTS_ENABLED,
   TTS_VOICE,
   TTS_MIN_AMOUNT,
+  TOAST_ENABLED,
 } from "./constants";
 
 // Variation 4 colour palette — toast notification colours
@@ -78,7 +79,8 @@ function App() {
     loadCampaign();
     loadSupporters();
 
-    // Auto-unlock speech on first interaction (browser autoplay policy)
+    // Auto-unlock speech on first interaction (browser autoplay policy).
+    // touchstart is required for iOS Safari, which may not fire click reliably.
     const unlock = () => {
       if (soundUnlockedRef.current) return;
       soundUnlockedRef.current = true;
@@ -91,9 +93,11 @@ function App() {
       }
       document.removeEventListener("click", unlock);
       document.removeEventListener("keydown", unlock);
+      document.removeEventListener("touchstart", unlock);
     };
     document.addEventListener("click", unlock);
     document.addEventListener("keydown", unlock);
+    document.addEventListener("touchstart", unlock);
 
     const interval = setInterval(() => {
       loadCampaign();
@@ -189,7 +193,9 @@ function App() {
         </button>
       )}
       <div className="card-wrapper">
-        <Toast supporter={newSupporter} onClose={handleToastClose} />
+        {TOAST_ENABLED && (
+          <Toast supporter={newSupporter} onClose={handleToastClose} />
+        )}
         <ConfettiAnimation trigger={celebrationTrigger} />
         {import.meta.env.DEV && !loading && (
           <button
