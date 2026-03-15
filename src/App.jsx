@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./App.scss";
 import AnimatedNumber from "./components/AnimatedNumber";
 import ConfettiAnimation from "./components/ConfettiAnimation";
 import Toast from "./components/Toast";
 import DnwLogo from "./assets/dnw-logo.png";
-import { fetchCampaign, fetchLatestSupporter } from "./api/chuffed";
+import { fetchCampaign, fetchSupporters } from "./api/chuffed";
 import {
   FETCH_INTERVAL_MS,
   TTS_ENABLED,
@@ -33,7 +33,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [newSupporter, setNewSupporter] = useState(null);
   const [soundUnlocked, setSoundUnlocked] = useState(false);
-  const lastSupporterIdRef = useRef(null);
+  const seenSupporterIdsRef = useRef(null); // null = first load not done yet
   const soundUnlockedRef = useRef(false);
   const pendingTtsRef = useRef(null);
 
@@ -54,13 +54,17 @@ function App() {
 
     const loadSupporters = async () => {
       try {
-        const latest = await fetchLatestSupporter();
-        if (!latest) return;
+        const supporters = await fetchSupporters();
+        if (!supporters.length) return;
 
-        if (latest.id !== lastSupporterIdRef.current) {
-          lastSupporterIdRef.current = latest.id;
+        // First load: show the most recent donor toast, then seed the Set with
+        // all visible keys so only genuinely new donations trigger on future polls
+        if (seenSupporterIdsRef.current === null) {
+          seenSupporterIdsRef.current = new Set(
+            supporters.map((s) => s.created_at),
+          );
+          const latest = supporters[0];
           setNewSupporter(latest);
-
           const name = latest.is_anonymous ? "Anonymous" : latest.name;
           const text = `${name} just donated ${latest.currency_symbol}${latest.amount}!`;
           if (Number(latest.amount) >= TTS_MIN_AMOUNT) {
@@ -69,6 +73,33 @@ function App() {
             } else {
               pendingTtsRef.current = text;
             }
+          }
+          return;
+        }
+
+        // Find genuinely new supporters (IDs not seen before)
+        const newSupporters = supporters.filter(
+          (s) => !seenSupporterIdsRef.current.has(s.created_at),
+        );
+
+        if (newSupporters.length === 0) return;
+
+        // Mark all new IDs as seen
+        newSupporters.forEach((s) =>
+          seenSupporterIdsRef.current.add(s.created_at),
+        );
+
+        // Show the newest new donation as the toast + TTS
+        const latest = newSupporters[0];
+        setNewSupporter(latest);
+
+        const name = latest.is_anonymous ? "Anonymous" : latest.name;
+        const text = `${name} just donated ${latest.currency_symbol}${latest.amount}!`;
+        if (Number(latest.amount) >= TTS_MIN_AMOUNT) {
+          if (soundUnlockedRef.current) {
+            speakTts(text);
+          } else {
+            pendingTtsRef.current = text;
           }
         }
       } catch (err) {
@@ -150,9 +181,9 @@ function App() {
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleToastClose = () => {
+  const handleToastClose = useCallback(() => {
     setNewSupporter(null);
-  };
+  }, []);
 
   const handleUnlockSound = () => {
     const primer = new SpeechSynthesisUtterance("");

@@ -1,7 +1,7 @@
 .toast {
   position: absolute;
   top: 0.5rem;
-  right: 0;
+  left: 1rem;
   background: var(
     --theme-toast-gradient,
     linear-gradient(135deg, #007a3d 0%, #ce1126 100%)
@@ -10,7 +10,7 @@
   padding: 0.8rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transform: translateX(100%);
+  transform: translateX(-100%);
   opacity: 0;
   transition: all 0.3s ease-in-out;
   z-index: 10;

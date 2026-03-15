@@ -34,14 +34,21 @@ export async function fetchCampaign() {
 }
 
 /**
- * Fetches the most recent supporter from the Chuffed REST API.
- * Returns the latest supporter object, or null if none found.
+ * Fetches recent supporters from the Chuffed REST API.
+ * Returns an array of supporter objects (newest first by id).
  */
-export async function fetchLatestSupporter() {
-  const response = await fetch(`${SUPPORTERS_URL}?limit=20&offset=0`);
+export async function fetchSupporters() {
+  const response = await fetch(
+    `${SUPPORTERS_URL}?limit=20&offset=0&_t=${Date.now()}`,
+    {
+      cache: "no-store",
+    },
+  );
   const data = await response.json();
   if (data.data && data.data.length > 0) {
-    return data.data[0];
+    return data.data.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at),
+    );
   }
-  return null;
+  return [];
 }
