@@ -9,7 +9,7 @@
  *   kick off the background model download.
  */
 import { KokoroTTS } from "kokoro-js";
-import { TTS_ENABLED, TTS_KOKORO_VOICE, TTS_VOICE } from "./constants.js";
+import { TTS_ENABLED, TTS_KOKORO_ENABLED, TTS_KOKORO_VOICE, TTS_VOICE } from "./constants.js";
 
 let engine = null;
 let audioCtx = null;
@@ -35,6 +35,7 @@ export function initTts(onProgress) {
   }
 
   // Start downloading the Kokoro model in the background (only once)
+  if (!TTS_KOKORO_ENABLED) return;
   if (!engine) {
     console.log("[Kokoro TTS] Downloading model (first run only, ~80 MB)…");
     lastLoggedPct = -1;
@@ -73,8 +74,8 @@ export function initTts(onProgress) {
 export function speak(text) {
   if (!TTS_ENABLED) return;
 
-  if (!engine) {
-    // Kokoro not ready yet – use Web Speech API immediately
+  if (!TTS_KOKORO_ENABLED || !engine) {
+    // Kokoro disabled or not yet loaded – use Web Speech API immediately
     _webSpeechFallback(text);
     return;
   }

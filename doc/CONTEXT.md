@@ -22,7 +22,8 @@
   Last updated: dark card redesign, DNW logo PNG, favicon, AnimatedNumber mount-guard
   fix, TTS_MIN_AMOUNT threshold, Toast rounded corners, card height stability,
   celebration >= fix, dev +£500 button, responsive layout, mobile TTS unlock,
-  TOAST_ENABLED constant, OBS Browser Source setup.
+  TOAST_ENABLED constant, OBS Browser Source setup, Kokoro neural TTS integration,
+  per-goal confetti fix, TTS_KOKORO_ENABLED constant.
 -->
 
 # Fundraising Tracker — AI Context Document
@@ -159,22 +160,32 @@ the white card — that bug has been permanently removed.
 ## src/constants.js — single source of truth for all magic values
 
 ```js
-export const CAMPAIGN_ID = 147526;
+export const CAMPAIGN_ID = 172939;
 export const GRAPHQL_URL = "https://chuffed.org/api/graphql";
 export const SUPPORTERS_URL = `https://chuffed.org/api/v2/campaigns/${CAMPAIGN_ID}/supporters`;
 export const FETCH_INTERVAL_MS = 5000;
 export const TTS_ENABLED = true;
-export const TTS_VOICE = "Google UK English Female";
-export const TTS_MIN_AMOUNT = 50;
+export const TTS_VOICE = "Google UK English Male";
+export const TTS_KOKORO_ENABLED = true;
+export const TTS_KOKORO_VOICE = "bm_daniel";
+export const TTS_MIN_AMOUNT = 1;
+export const TOAST_ENABLED = true;
 ```
 
 - `CAMPAIGN_ID` — Chuffed campaign ID. Used by both the GraphQL query and `SUPPORTERS_URL`.
 - `FETCH_INTERVAL_MS` — polling interval in milliseconds (both API calls).
-- `TTS_ENABLED` — set to `false` to silence all speech entirely.
-- `TTS_VOICE` — browser voice name for TTS. See file comments for full list.
-- `TTS_MIN_AMOUNT` — minimum donation amount (in main currency units, e.g. £) required
-  to trigger a spoken announcement. Donations below this value still show the Toast
-  notification but are not read aloud. Set to `0` to speak all donations.
+- `TTS_ENABLED` — set to `false` to silence ALL speech (both browser voice and AI voice).
+- `TTS_VOICE` — browser voice name used as fallback while Kokoro loads, or always when
+  `TTS_KOKORO_ENABLED = false`. See file comments for full list of available voices.
+- `TTS_KOKORO_ENABLED` — set to `false` to skip the Kokoro AI model entirely and always
+  use the browser voice. `TTS_ENABLED = false` overrides this and silences everything.
+- `TTS_KOKORO_VOICE` — voice key for the Kokoro neural engine. Format: `{region}{gender}_{name}`
+  where region is `a` (American) or `b` (British), gender is `f` (female) or `m` (male).
+  Examples: `bm_george`, `bm_daniel`, `bf_emma`, `af_heart`, `am_fenrir`.
+- `TTS_MIN_AMOUNT` — minimum donation (in main currency units, e.g. £) required to trigger
+  a spoken announcement. Below this value Toast still shows but speech is skipped. Set to
+  `0` to speak all donations.
+- `TOAST_ENABLED` — set to `false` to hide the on-screen donor Toast notification entirely.
 
 ---
 
@@ -294,7 +305,7 @@ document.documentElement.style.setProperty(
 | `percentage`         | number       | `(amount / target) * 100`, capped at 100                                                                                     |
 | `displayPercentage`  | number       | Animated version of `percentage` — drives progress bar width                                                                 |
 | `loading`            | boolean      | True until first successful `fetchCampaign()` response                                                                       |
-| `celebrationTrigger` | boolean      | Pulses to `true` for 5s when amount === target                                                                               |
+| `celebrationTrigger` | boolean      | Pulses to `true` for 5s when a goal is reached for the first time                                                           |
 | `newSupporter`       | object\|null | Supporter object shown in Toast; set to null when Toast closes                                                               |
 | `soundUnlocked`      | boolean      | Whether user has clicked to unlock browser speech. Mirrors `soundUnlockedRef` as state so the unlock button re-renders away. |
 
@@ -338,10 +349,23 @@ threshold-gated. `TTS_MIN_AMOUNT` is set in `constants.js`.
 On first load `lastSupporterIdRef.current` is `null`, so the latest supporter
 **always** shows on page load/refresh. On subsequent polls, only a new ID triggers Toast.
 
+### Ref — celebration deduplication
+
+```js
+const celebratedTargetRef = useRef(null);
+```
+
+Tracks the `target` value for which confetti has already fired. Confetti only fires
+when `amount >= target` AND `target !== celebratedTargetRef.current`. On firing,
+`celebratedTargetRef.current` is set to the current `target` so further donations
+beyond the same goal don't re-trigger. When the streamer raises the goal, the new
+`target` won't match the ref, so the new goal can fire confetti exactly once.
+
 ### useEffect 2 — celebration trigger
 
-Watches `amount` and `target`. When both match and are > 0, sets `celebrationTrigger`
-to `true` for 5000ms.
+Watches `amount` and `target`. When `amount >= target`, both > 0, and this target
+hasn't been celebrated yet, sets `celebrationTrigger` to `true` for 5000ms and
+records the target in `celebratedTargetRef`.
 
 ### useEffect 3 — progress bar animation
 
@@ -574,11 +598,19 @@ affect hosted deployments.
 
 ### TTS in OBS
 
-OBS Browser Source runs in a Chromium-based engine. The Web Speech API is available.
-The `TTS_ENABLED` / `TTS_VOICE` / `TTS_MIN_AMOUNT` constants all work. However,
-autoplay policy means the user must interact before sound works — the **🔊 Click to
-enable donation sounds** button will appear on first load inside OBS; right-click
-the source and select **Interact** to click it, then close the interaction panel.
+OBS Browser Source runs in a Chromium-based engine. The Web Speech API and Web Audio
+API are both available. All TTS constants work. Autoplay policy means the user must
+interact before sound plays — the **🔊 Click to enable donation sounds** button
+appears on first load inside OBS; right-click the source → **Interact** → click the
+button → close the interaction panel.
+
+The Kokoro neural TTS model (~80 MB, q4 quantised) is downloaded from Hugging Face
+on first click and cached in OBS's Chromium cache on disk. Subsequent OBS restarts
+load the model from cache in a few seconds — no re-download unless the OBS cache is
+manually cleared. While the model downloads in the background, the browser Web Speech
+API is used as a fallback so no donation announcements are missed.
+
+To skip the AI model entirely, set `TTS_KOKORO_ENABLED = false` in `constants.js`.
 
 ### TOAST_ENABLED constant
 
