@@ -41,10 +41,26 @@ export const TTS_ENABLED = true;
 // Leave as "" to use the browser default voice
 export const TTS_VOICE = "Google UK English Male";
 
+// ── Kokoro neural TTS voice ───────────────────────────────────────────────────
+// Used when the kokoro-js engine finishes loading (sounds far more human).
+// Falls back to TTS_VOICE (Web Speech API) while the model is downloading.
+//
+// Voice key format: {region}{gender}_{name}
+//   a = American  |  b = British
+//   f = Female    |  m = Male
+//
+// American female:  af_heart ★  af_alloy  af_nova  af_sarah  af_sky  af_river
+// American male:    am_adam     am_echo   am_fenrir am_michael am_puck
+// British female:   bf_emma     bf_isabella bf_alice bf_lily
+// British male:     bm_george ★ bm_lewis  bm_daniel bm_fable
+//
+// ★ recommended defaults
+export const TTS_KOKORO_VOICE = "bm_daniel"; // British male — clear & natural
+
 // Minimum donation amount (in main currency units, e.g. £) that triggers a TTS
 // announcement. Donations below this threshold are shown in the Toast but spoken
 // announcements are skipped. Set to 0 to speak all donations.
-export const TTS_MIN_AMOUNT = 50;
+export const TTS_MIN_AMOUNT = 1;
 
 // ── Toast notification settings ──────────────────────────────────────────────
 // Set to false to disable the donor toast notification entirely

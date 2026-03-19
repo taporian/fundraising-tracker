@@ -7,4 +7,9 @@ export default defineConfig({
   // base './' makes all asset paths relative so the built index.html
   // can be loaded directly from disk in OBS Browser Source
   base: './',
+  // Exclude heavy ONNX/transformers packages from Vite's pre-bundler so their
+  // WebAssembly and dynamic imports work correctly in both dev and build.
+  optimizeDeps: {
+    exclude: ['@huggingface/transformers', 'kokoro-js'],
+  },
 })

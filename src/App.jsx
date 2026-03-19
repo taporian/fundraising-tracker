@@ -8,10 +8,10 @@ import { fetchCampaign, fetchSupporters } from "./api/chuffed";
 import {
   FETCH_INTERVAL_MS,
   TTS_ENABLED,
-  TTS_VOICE,
   TTS_MIN_AMOUNT,
   TOAST_ENABLED,
 } from "./constants";
+import { speak, initTts } from "./tts";
 
 // Variation 4 colour palette — toast notification colours
 document.documentElement.style.setProperty(
@@ -36,6 +36,7 @@ function App() {
   const seenSupporterIdsRef = useRef(null); // null = first load not done yet
   const soundUnlockedRef = useRef(false);
   const pendingTtsRef = useRef(null);
+  const celebratedTargetRef = useRef(null); // the target value we already fired confetti for
 
   useEffect(() => {
     const loadCampaign = async () => {
@@ -115,8 +116,7 @@ function App() {
     const unlock = () => {
       if (soundUnlockedRef.current) return;
       soundUnlockedRef.current = true;
-      const primer = new SpeechSynthesisUtterance("");
-      window.speechSynthesis.speak(primer);
+      initTts(); // creates AudioContext, primes Web Speech, starts Kokoro download
       if (pendingTtsRef.current) {
         const text = pendingTtsRef.current;
         pendingTtsRef.current = null;
@@ -141,7 +141,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (amount >= target && amount > 0) {
+    if (
+      amount > 0 &&
+      target > 0 &&
+      amount >= target &&
+      celebratedTargetRef.current !== target
+    ) {
+      celebratedTargetRef.current = target;
       setCelebrationTrigger(true);
       setTimeout(() => setCelebrationTrigger(false), 5000);
     }
@@ -169,16 +175,7 @@ function App() {
   }, [percentage]);
 
   const speakTts = (text) => {
-    if (!TTS_ENABLED) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
-    const preferred =
-      voices.find((v) => v.name === TTS_VOICE) ||
-      voices.find((v) => v.lang === "en-GB") ||
-      voices.find((v) => v.lang.startsWith("en"));
-    if (preferred) utterance.voice = preferred;
-    window.speechSynthesis.speak(utterance);
+    speak(text);
   };
 
   const handleToastClose = useCallback(() => {
@@ -186,10 +183,9 @@ function App() {
   }, []);
 
   const handleUnlockSound = () => {
-    const primer = new SpeechSynthesisUtterance("");
-    window.speechSynthesis.speak(primer);
     soundUnlockedRef.current = true;
-    setSoundUnlocked(true);
+    setSoundUnlocked(true); // hide the button immediately
+    initTts(); // download Kokoro silently; speak() switches over automatically when ready
     if (pendingTtsRef.current) {
       const text = pendingTtsRef.current;
       pendingTtsRef.current = null;
