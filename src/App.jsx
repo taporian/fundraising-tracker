@@ -254,7 +254,9 @@ function App() {
           </div>
           <div className="card__content">
             <div className="card__header-row">
-              <h3 className="card__title">DNW Fundraiser</h3>
+              <h3 className="card__title">
+                Jim D. Deuchars &amp; Oliver's Fund
+              </h3>
               {!loading && (
                 <div className="card__amount">
                   {currency}
